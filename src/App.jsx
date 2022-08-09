@@ -1,15 +1,15 @@
 import * as THREE from "three";
-import React, { useRef, useEffect, useState } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import React, { useRef, useEffect, useState, createRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { EffectComposer, ChromaticAberration } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 
 export default function App() {
   return (
-    <Canvas camera={{ position: [0, 0, 5], far: 50 }}>
+    <Canvas camera={{ position: [0, 0, 5] }}>
       <Webcam />
-      <OrbitControls autoRotate />
+      <OrbitControls enableZoom={false} autoRotate />
       <EffectComposer multisampling={1} frameBufferType={THREE.HalfFloatType}>
         <ChromaticAberration
           blendFunction={BlendFunction.DIFFERENCE} // blend mode
@@ -23,7 +23,7 @@ export default function App() {
 function Webcam() {
   const [video, setVideo] = useState();
   const analyser = useRef();
-  const plane = useRef();
+
   useEffect(() => {
     (async () => {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -46,22 +46,41 @@ function Webcam() {
       analyser.current = new THREE.AudioAnalyser(audio, 32);
     })();
   }, []);
-  useFrame(() => {
-    if (analyser.current) {
+  useFrame(({ camera }) => {
+    if (analyser.current && planes.current) {
       const data = analyser.current.getAverageFrequency();
-      plane.current.material.color.setRGB(data / 100, 0, 0);
-      plane.current.scale.x = plane.current.scale.y = (data / 100) * 2;
+      // planes.current.map((ref) => ref.material.color.setRGB(data / 100, 0, 0));
+      planes.current.forEach((ref) => {
+        ref.current.scale.x = ref.current.scale.y = (data / 100) * 2;
+        ref.current.lookAt(camera.position);
+      });
     }
   });
+  const length = 16;
+  const radius = 32;
+  const planes = useRef([]);
+  planes.current = Array.from({ length: length }, () => createRef());
   return (
-    <mesh ref={plane}>
-      <planeBufferGeometry args={[3.2, 1.9]} />
-      {video && (
-        <meshStandardMaterial emissive={"white"} side={THREE.DoubleSide}>
-          <videoTexture attach="map" args={[video]} />
-          <videoTexture attach="emissiveMap" args={[video]} />
-        </meshStandardMaterial>
-      )}
-    </mesh>
+    <React.Fragment>
+      {planes.current.map((_, i) => {
+        const phi = Math.acos(-1 + (2 * i) / length);
+        const theta = Math.sqrt(length * Math.PI) * phi;
+        return (
+          <mesh
+            key={i}
+            ref={planes.current[i]}
+            position={new THREE.Vector3().setFromSphericalCoords(radius, phi, theta)}
+          >
+            <planeBufferGeometry args={[16, 9]} />
+            {video && (
+              <meshStandardMaterial emissive={"white"} side={THREE.DoubleSide}>
+                <videoTexture attach="map" args={[video]} />
+                <videoTexture attach="emissiveMap" args={[video]} />
+              </meshStandardMaterial>
+            )}
+          </mesh>
+        );
+      })}
+    </React.Fragment>
   );
 }
