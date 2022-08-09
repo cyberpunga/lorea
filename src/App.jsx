@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import React, { useRef, useEffect, useState, createRef } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { EffectComposer, ChromaticAberration } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
@@ -11,10 +11,7 @@ export default function App() {
       <Webcam />
       <OrbitControls enableZoom={false} autoRotate />
       <EffectComposer multisampling={1} frameBufferType={THREE.HalfFloatType}>
-        <ChromaticAberration
-          blendFunction={BlendFunction.DIFFERENCE} // blend mode
-          offset={[0.032, 0]} // color offset
-        />
+        <ChromaticAberration blendFunction={BlendFunction.DIFFERENCE} offset={[0.032, 0]} />
       </EffectComposer>
     </Canvas>
   );
