@@ -1,4 +1,4 @@
-# lorea
+# 📺 lorea
 
 This is an audio visualization experiment. So far it's just `MediaDevices.getUserMedia()` hooked to `THREE`'s `videoTexture` and `AudioAnalyser`, using `@react-three/fiber`.
 
